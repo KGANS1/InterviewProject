@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt ve Giriş</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 10px;
+            font-size: 14px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Kayıt Ol</h2>
+        <input type="text" id="register-username" placeholder="Kullanıcı Adı">
+        <input type="password" id="register-password" placeholder="Şifre">
+        <label>
+            <input type="checkbox" id="is-admin"> Admin olarak kayıt ol
+        </label>
+        <button onclick="register()">Kayıt Ol</button>
+        <div id="register-message" class="message"></div>
+    </div>
+
+    <div class="form-container">
+        <h2>Giriş Yap</h2>
+        <input type="text" id="login-username" placeholder="Kullanıcı Adı">
+        <input type="password" id="login-password" placeholder="Şifre">
+        <button onclick="login()">Giriş Yap</button>
+        <div id="login-message" class="message"></div>
+    </div>
+
+    <script>
+        function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const isAdmin = document.getElementById('is-admin').checked;
+            const messageDiv = document.getElementById('register-message');
+
+            fetch('http://127.0.0.1:5000/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username, password: password, is_admin: isAdmin })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    messageDiv.style.color = 'green';
+                    messageDiv.textContent = data.message;
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Kayıt işlemi başarısız oldu. Lütfen tekrar deneyin.';
+            });
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const messageDiv = document.getElementById('login-message');
+
+            fetch('http://127.0.0.1:5000/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',  // Oturum bilgisini dahil etmek için
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    messageDiv.style.color = 'green';
+                    messageDiv.textContent = data.message;
+                    window.location.href = data.redirect_url;  // Yönlendirme URL'sini kullan
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.';
+            });
+        }
+    </script>
+</body

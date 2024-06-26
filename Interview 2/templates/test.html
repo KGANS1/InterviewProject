@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BITES Interview - Test</title>
+    <style>
+        /* CSS kodları */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #007BFF;
+            padding: 10px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar span {
+            margin-right: 20px;
+        }
+        .container {
+            width: 60%;
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+        }
+        .options label {
+            margin-bottom: 10px;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+        }
+        .navigation button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .navigation button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div>
+            <span id="timer">20:00</span>
+            <span>Toplam Soru: 15 | Kalan Sorular: <span id="remaining-questions">15</span></span>
+        </div>
+        <div id="question-nav"></div>
+    </div>
+    <div class="container">
+        <div id="question-container" class="question">
+            <h2 id="question-title">1. Soru</h2>
+            <p id="question-text">Bu bir örnek sorudur. Sorular burada görünecek.</p>
+            <div id="options" class="options"></div>
+        </div>
+        <div class="navigation">
+            <button onclick="previousQuestion()">Önceki Soru</button>
+            <button onclick="submitAnswers()">Sonuçları Gönder</button>
+            <button onclick="nextQuestion()">Sonraki Soru</button>
+        </div>
+    </div>
+    <script>
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = {};  // Kullanıcı cevaplarını saklamak için
+        let timer;
+        let timeLeft = 20 * 60;  // 20 dakika
+
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch('http://127.0.0.1:5000/questions', {
+                method: 'GET',
+                credentials: 'include'  // Oturum bilgisini dahil etmek için
+            })
+            .then(response => {
+                if (response.status === 403) {
+                    window.location.href = '/selection';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                questions = data;
+                const questionNav = document.getElementById("question-nav");
+                for (let i = 0; i < questions.length; i++) {
+                    const button = document.createElement("button");
+                    button.textContent = i + 1;
+                    button.onclick = function () {
+                        saveCurrentAnswer();
+                        currentQuestionIndex = i;
+                        loadQuestion(currentQuestionIndex);
+                    };
+                    questionNav.appendChild(button);
+                }
+                loadQuestion(currentQuestionIndex);
+                startTimer();
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        });
+
+        function startTimer() {
+            timer = setInterval(function () {
+                timeLeft--;
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+                document.getElementById("timer").textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    submitAnswers();
+                }
+            }, 1000);
+        }
+
+        function loadQuestion(index) {
+            const question = questions[index];
+            document.getElementById("question-title").textContent = `${index + 1}. Soru`;
+            document.getElementById("question-text").textContent = question.question_text;
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = '';
+            for (const [key, value] of Object.entries(question.options)) {
+                const optionLabel = document.createElement("label");
+                const optionInput = document.createElement("input");
+                optionInput.type = "radio";
+                optionInput.name = `question${index}`;
+                optionInput.value = key;
+                if (userAnswers[question.id] === key) {
+                    optionInput.checked = true;  // Seçilen cevabı geri yükleme
+                }
+                optionLabel.appendChild(optionInput);
+                optionLabel.appendChild(document.createTextNode(` ${value}`));
+                optionsContainer.appendChild(optionLabel);
+            }
+            document.getElementById("remaining-questions").textContent = questions.length - index - 1;
+        }
+
+        function saveCurrentAnswer() {
+            const selectedOption = document.querySelector(`input[name="question${currentQuestionIndex}"]:checked`);
+            if (selectedOption) {
+                userAnswers[questions[currentQuestionIndex].id] = selectedOption.value;
+            }
+        }
+
+        function nextQuestion() {
+            saveCurrentAnswer();
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion(currentQuestionIndex);
+            }
+        }
+
+        function previousQuestion() {
+            saveCurrentAnswer();
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion(currentQuestionIndex);
+            }
+        }
+
+        function submitAnswers() {
+            saveCurrentAnswer();
+            fetch('http://127.0.0.1:5000/submit', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answers: userAnswers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = '/selection';  // Yönlendirme ekleme
+                } else {
+                    alert('Sonuçlar gönderilirken bir hata oluştu.');
+                }
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        }
+
+        window.onpopstate = function(event) {
+            if (event.state && event.state.page === 'test') {
+                window.location.href = '/selection';
+            }
+        };
+
+        // Sayfa yüklendiğinde durumu ayarla
+        window.history.replaceState({ page: 'test' }, '');
+    </script>
+</body>
+</html>

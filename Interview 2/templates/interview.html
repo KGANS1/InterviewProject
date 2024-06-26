@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BITES Interview - Mülakat</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #007BFF;
+            padding: 10px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar span {
+            margin-right: 20px;
+        }
+        .option-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin: 10px;
+            width: 200px;
+            text-align: center;
+        }
+        .option-button:hover {
+            background-color: #0056b3;
+        }
+        .description {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span id="username"></span>
+        <button class="option-button" onclick="logout()">Çıkış Yap</button>
+    </div>
+    <h1>Mülakat Seçenekleri</h1>
+    <button class="option-button" onclick="showDescription('test')">Test Sınavı</button>
+    <button class="option-button" onclick="showDescription('coding')">Kodlama Mülakatı</button>
+
+    <div id="test-description" class="description">
+        <h2>Test Sınavı</h2>
+        <p>Test sınavı 20 dakikadır.</p>
+        <p>15 soru vardır.</p>
+        <p>Sorular sıra ile gösterilecektir.</p>
+        <button onclick="startTest()">Testi Başlat</button>
+    </div>
+
+    <div id="coding-description" class="description">
+        <h2>Kodlama Mülakatı</h2>
+        <p>Kodlama mülakatı hakkında bilgi buraya gelecek.</p>
+        <button onclick="startCoding()">Kodlamaya Başla</button>
+    </div>
+
+    <script>
+        // Kullanıcı adını oturumdan al ve göster
+        fetch('http://127.0.0.1:5000/get_username', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('username').textContent = `Hoş geldiniz, ${data.username}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching username:', error);
+        });
+
+        function logout() {
+            fetch('http://127.0.0.1:5000/logout', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => {
+                console.error('Error logging out:', error);
+            });
+        }
+
+        function showDescription(type) {
+            document.getElementById('test-description').style.display = 'none';
+            document.getElementById('coding-description').style.display = 'none';
+
+            if (type === 'test') {
+                document.getElementById('test-description').style.display = 'block';
+            } else if (type === 'coding') {
+                document.getElementById('coding-description').style.display = 'block';
+            }
+        }
+
+        function startTest() {
+            // Test sayfasına yönlendirme
+            window.location.href = "test.html";
+        }
+
+        function startCoding() {
+            // Kodlama mülakatı sayfasına yönlendirme
+            window.location.href = "coding.html";
+        }
+    </script>
+</body>
+</html>

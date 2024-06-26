@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #007BFF;
+            padding: 10px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar span {
+            margin-right: 20px;
+        }
+        .container {
+            width: 80%;
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span id="username"></span>
+        <button onclick="logout()">Çıkış Yap</button>
+    </div>
+    <div class="container">
+        <h1>Admin Paneli</h1>
+        <table id="answers-table">
+            <thead>
+                <tr>
+                    <th>Kullanıcı Adı</th>
+                    <th>Soru</th>
+                    <th>Verilen Cevap</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Kullanıcı adını oturumdan al ve göster
+        fetch('http://127.0.0.1:5000/get_username', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('username').textContent = `Hoş geldiniz, ${data.username}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching username:', error);
+        });
+
+        function logout() {
+            fetch('http://127.0.0.1:5000/logout', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => {
+                console.error('Error logging out:', error);
+            });
+        }
+
+        // Kullanıcı cevaplarını getir ve tabloya ekle
+        fetch('http://127.0.0.1:5000/admin_answers', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const answersTableBody = document.getElementById('answers-table').getElementsByTagName('tbody')[0];
+                data.answers.forEach(answer => {
+                    const row = answersTableBody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    const cell3 = row.insertCell(2);
+                    cell1.textContent = answer.user_id;
+                    cell2.textContent = answer.question_text;
+                    cell3.textContent = answer.selected_option;
+                });
+            } else {
+                alert('Cevaplar getirilirken bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching answers:', error);
+        });
+    </script>
+</body>
+</html>

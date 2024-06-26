@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BITES Interview - Kodlama Mülakatı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            width: 80%;
+            max-width: 1200px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .editor-section, .output-section {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        select, button {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        select {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .output {
+            white-space: pre-wrap;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            height: 150px;
+            overflow-y: auto;
+        }
+        .timer {
+            font-size: 20px;
+            font-weight: bold;
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kodlama Sorusu</h1>
+        <p>Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.</p>
+        <p>Example:</p>
+        <p>Input: nums = [2,7,11,15], target = 9</p>
+        <p>Output: [0, 1]</p>
+        
+        <div class="editor-section">
+            <h2>Kod Editörü</h2>
+            <select id="language">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+            </select>
+            <textarea id="code" placeholder="Kodunuzu buraya yazın..."></textarea>
+            <button onclick="runCode()">Çalıştır</button>
+        </div>
+        <div class="output-section">
+            <h2>Çıktı</h2>
+            <div id="output" class="output"></div>
+        </div>
+        <div class="timer" id="timer">15:00</div>
+        <button onclick="submitCode()">Sonuçları Gönder</button>
+    </div>
+    <script>
+        function runCode() {
+            const code = document.getElementById('code').value;
+            const language = document.getElementById('language').value;
+            const outputElement = document.getElementById('output');
+
+            fetch('http://127.0.0.1:5000/run_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: code, language: language })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    outputElement.textContent = data.output;
+                } else {
+                    outputElement.textContent = 'Hata: ' + data.output;
+                }
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+                outputElement.textContent = 'Bir hata oluştu: ' + error.message;
+            });
+        }
+
+        function submitCode() {
+            const code = document.getElementById('code').value;
+            const language = document.getElementById('language').value;
+
+            fetch('http://127.0.0.1:5000/submit_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: code, language: language })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = "login.html";
+                } else {
+                    alert('Gönderme işlemi başarısız: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+        }
+
+        // Timer
+        function startTimer(duration, display) {
+            var timer = duration, minutes, seconds;
+            var interval = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    submitCode();
+                }
+            }, 1000);
+        }
+
+        window.onload = function () {
+            var fifteenMinutes = 60 * 15,
+                display = document.querySelector('#timer');
+            startTimer(fifteenMinutes, display);
+        };
+    </script>
+</body>
+</html>
